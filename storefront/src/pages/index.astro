@@ -1,0 +1,10 @@
+---
+import Layout from "../layouts/Layout.astro";
+import AdCatalog from "@/features/products/components/AdCatalog";
+import { API_BASE } from "@/config/env";
+---
+
+<Layout title="Home">
+	<AdCatalog client:only="react" apiBase={API_BASE} imageBase={API_BASE} />
+</Layout>
+

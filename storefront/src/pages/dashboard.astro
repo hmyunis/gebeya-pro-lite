@@ -1,0 +1,88 @@
+---
+import Layout from "../layouts/Layout.astro";
+import DashboardApp from "@/features/dashboard/components/DashboardApp";
+---
+
+<Layout title="Dashboard" mainClass="max-w-5xl mx-auto px-4 pt-28 pb-16">
+  <style is:global>
+    html[data-dashboard-ready="true"] #dashboard-placeholder {
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+  </style>
+
+  <section class="relative min-h-[640px]">
+    <div
+      id="dashboard-placeholder"
+      aria-hidden="true"
+      class="pointer-events-none absolute inset-0 z-0 space-y-8 opacity-100 transition-opacity duration-300"
+    >
+      <div class="grid gap-4 md:grid-cols-3 animate-pulse">
+        <div class="rounded-3xl border border-black/5 bg-white/70 p-5">
+          <div class="h-3 w-24 rounded-full bg-black/10"></div>
+          <div class="mt-3 h-8 w-16 rounded-xl bg-black/10"></div>
+          <div class="mt-3 h-3 w-32 rounded-full bg-black/10"></div>
+        </div>
+        <div class="rounded-3xl border border-black/5 bg-white/70 p-5">
+          <div class="h-3 w-28 rounded-full bg-black/10"></div>
+          <div class="mt-3 h-8 w-16 rounded-xl bg-black/10"></div>
+          <div class="mt-3 h-3 w-36 rounded-full bg-black/10"></div>
+        </div>
+        <div class="rounded-3xl border border-black/5 bg-white/70 p-5">
+          <div class="h-3 w-36 rounded-full bg-black/10"></div>
+          <div class="mt-3 h-10 w-24 rounded-2xl bg-black/10"></div>
+          <div class="mt-3 h-3 w-40 rounded-full bg-black/10"></div>
+        </div>
+      </div>
+
+      <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] animate-pulse">
+        <div class="rounded-3xl border border-black/5 bg-white/70 p-6">
+          <div class="h-3 w-24 rounded-full bg-black/10"></div>
+          <div class="mt-3 h-8 w-60 rounded-2xl bg-black/10"></div>
+          <div class="mt-6 space-y-4">
+            <div class="rounded-2xl border border-black/5 bg-white/60 p-4">
+              <div class="flex items-center justify-between">
+                <div class="space-y-2">
+                  <div class="h-4 w-32 rounded-full bg-black/10"></div>
+                  <div class="h-3 w-24 rounded-full bg-black/10"></div>
+                </div>
+                <div class="h-6 w-24 rounded-full bg-black/10"></div>
+              </div>
+              <div class="mt-4 flex gap-2">
+                <div class="h-8 w-8 rounded-xl bg-black/10"></div>
+                <div class="h-8 w-8 rounded-xl bg-black/10"></div>
+                <div class="h-8 w-8 rounded-xl bg-black/10"></div>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-black/5 bg-white/60 p-4">
+              <div class="flex items-center justify-between">
+                <div class="space-y-2">
+                  <div class="h-4 w-28 rounded-full bg-black/10"></div>
+                  <div class="h-3 w-20 rounded-full bg-black/10"></div>
+                </div>
+                <div class="h-6 w-20 rounded-full bg-black/10"></div>
+              </div>
+              <div class="mt-4 flex gap-2">
+                <div class="h-8 w-8 rounded-xl bg-black/10"></div>
+                <div class="h-8 w-8 rounded-xl bg-black/10"></div>
+                <div class="h-8 w-8 rounded-xl bg-black/10"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-black/5 bg-white/70 p-6">
+          <div class="h-3 w-32 rounded-full bg-black/10"></div>
+          <div class="mt-3 h-8 w-44 rounded-2xl bg-black/10"></div>
+          <div class="mt-6 flex h-64 items-center justify-center">
+            <div class="h-44 w-44 rounded-full bg-black/10"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative z-10">
+      <DashboardApp client:only="react" />
+    </div>
+  </section>
+</Layout>

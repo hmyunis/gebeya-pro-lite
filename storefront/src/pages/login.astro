@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import AuthLogin from "@/features/auth/components/AuthLogin";
+import { PUBLIC_TELEGRAM_BOT_NAME } from "@/config/env";
+---
+
+<Layout
+  title="Login"
+  showNavbar={false}
+  mainClass="min-h-screen px-4 pt-14 md:pt-20"
+>
+  <section class="mx-auto w-full max-w-md">
+    <AuthLogin client:only="react" telegramBot={PUBLIC_TELEGRAM_BOT_NAME} />
+  </section>
+</Layout>

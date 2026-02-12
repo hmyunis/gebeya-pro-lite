@@ -1,0 +1,249 @@
+---
+import "../styles/global.css";
+import Navbar from "@/features/navigation/components/Navbar";
+import MobileBottomNav from "@/features/navigation/components/MobileBottomNav";
+import Footer from "@/features/footer/components/Footer";
+import Toasts from "@/app/Toasts";
+import AuthBootstrap from "@/features/auth/components/AuthBootstrap";
+import {
+  API_BASE,
+  PUBLIC_AUTHOR_NAME,
+  PUBLIC_CONTACT_EMAIL,
+  PUBLIC_DEFAULT_OG_IMAGE,
+  PUBLIC_DEFAULT_SEO_DESCRIPTION,
+  PUBLIC_SITE_NAME,
+  PUBLIC_SITE_URL,
+  PUBLIC_SOCIAL_GITHUB_URL,
+  PUBLIC_SOCIAL_TELEGRAM_URL,
+  PUBLIC_SOCIAL_TIKTOK_URL,
+} from "@/config/env";
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  keywords?: string;
+  noIndex?: boolean;
+  showNavbar?: boolean;
+  showBottomNav?: boolean;
+  mainClass?: string;
+}
+
+const {
+  title,
+  description = PUBLIC_DEFAULT_SEO_DESCRIPTION,
+  image = PUBLIC_DEFAULT_OG_IMAGE,
+  keywords = "Ethiopia marketplace, online ads, Gebeya Pro, buyers, merchants",
+  noIndex = false,
+  showNavbar = true,
+  showBottomNav = true,
+  mainClass = "max-w-7xl mx-auto px-4 pt-28 pb-16",
+} = Astro.props;
+
+const resolvedMainClass = showBottomNav
+  ? `${mainClass} pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:pb-16`
+  : mainClass;
+
+const pageTitle = `${title} | ${PUBLIC_SITE_NAME}`;
+const canonicalUrl = new URL(Astro.url.pathname, `${PUBLIC_SITE_URL}/`).toString();
+const previewImageUrl = image.startsWith("http")
+  ? image
+  : new URL(image, `${PUBLIC_SITE_URL}/`).toString();
+const robotsContent = noIndex
+  ? "noindex, nofollow, noarchive"
+  : "index, follow, max-image-preview:large";
+
+const organizationJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: PUBLIC_SITE_NAME,
+  url: PUBLIC_SITE_URL,
+  email: PUBLIC_CONTACT_EMAIL,
+  logo: new URL("/favicons/web-app-manifest-512x512.png", `${PUBLIC_SITE_URL}/`).toString(),
+  sameAs: [
+    PUBLIC_SOCIAL_GITHUB_URL,
+    PUBLIC_SOCIAL_TELEGRAM_URL,
+    PUBLIC_SOCIAL_TIKTOK_URL,
+  ],
+});
+
+const websiteJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: PUBLIC_SITE_NAME,
+  url: PUBLIC_SITE_URL,
+  inLanguage: "am-ET",
+});
+
+const analyticsEndpoint = `${API_BASE}/v1/analytics/visits`;
+---
+
+<!doctype html>
+<html lang="am-ET">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <script is:inline>
+      (() => {
+        const key = "gebeya-storefront-locale";
+        try {
+          const value = localStorage.getItem(key);
+          const locale = value === "en" ? "en-US" : "am-ET";
+          document.documentElement.lang = locale;
+        } catch {
+          document.documentElement.lang = "am-ET";
+        }
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const storageKey = "gebeya-storefront-theme";
+        const light = "light";
+        const dark = "dark";
+
+        try {
+          const stored = localStorage.getItem(storageKey);
+          const theme =
+            stored === light || stored === dark
+              ? stored
+              : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? dark
+                : light;
+
+          const root = document.documentElement;
+          root.dataset.theme = theme;
+          root.classList.toggle("dark", theme === dark);
+        } catch {
+          const root = document.documentElement;
+          const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? dark
+            : light;
+          root.dataset.theme = fallbackTheme;
+          root.classList.toggle("dark", fallbackTheme === dark);
+        }
+      })();
+    </script>
+    <script is:inline define:vars={{ analyticsEndpoint }}>
+      (() => {
+        const endpoint = analyticsEndpoint;
+        const visitorStorageKey = "gebeya-visitor-id";
+
+        const createVisitorId = () => {
+          if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+            return crypto.randomUUID().replace(/-/g, "");
+          }
+          return `v${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+        };
+
+        let visitorId = null;
+        try {
+          const stored = localStorage.getItem(visitorStorageKey);
+          visitorId = typeof stored === "string" && stored.trim().length >= 16 ? stored.trim() : null;
+          if (!visitorId) {
+            visitorId = createVisitorId();
+            localStorage.setItem(visitorStorageKey, visitorId);
+          }
+        } catch {
+          visitorId = createVisitorId();
+        }
+
+        const payload = {
+          eventType: "page_view",
+          visitorId,
+          path: `${window.location.pathname}${window.location.search}`,
+          referrer: document.referrer || undefined,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || undefined,
+          language: navigator.language || undefined,
+        };
+
+        const serialized = JSON.stringify(payload);
+        if (typeof navigator.sendBeacon === "function") {
+          const blob = new Blob([serialized], { type: "application/json" });
+          navigator.sendBeacon(endpoint, blob);
+          return;
+        }
+
+        void fetch(endpoint, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: serialized,
+          keepalive: true,
+        });
+      })();
+    </script>
+    <title>{pageTitle}</title>
+
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content={PUBLIC_AUTHOR_NAME} />
+    <meta name="robots" content={robotsContent} />
+    <meta name="application-name" content={PUBLIC_SITE_NAME} />
+    <meta name="theme-color" content="#0b1427" />
+    <script is:inline>
+      (() => {
+        const root = document.documentElement;
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (!metaThemeColor) return;
+        const nextColor =
+          root.dataset.theme === "dark" || root.classList.contains("dark")
+            ? "#101c32"
+            : "#0b1427";
+        metaThemeColor.setAttribute("content", nextColor);
+      })();
+    </script>
+    <meta name="format-detection" content="telephone=no, address=no, email=no" />
+
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="author" href={PUBLIC_SOCIAL_GITHUB_URL} />
+    <link rel="me" href={PUBLIC_SOCIAL_GITHUB_URL} />
+    <link rel="me" href={PUBLIC_SOCIAL_TELEGRAM_URL} />
+    <link rel="me" href={PUBLIC_SOCIAL_TIKTOK_URL} />
+
+    <link rel="icon" type="image/png" href="/favicons/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" />
+    <link rel="shortcut icon" href="/favicons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Gebeya Pro" />
+    <link rel="manifest" href="/favicons/site.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="am_ET" />
+    <meta property="og:site_name" content={PUBLIC_SITE_NAME} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={previewImageUrl} />
+    <meta property="og:image:alt" content={`${PUBLIC_SITE_NAME} preview`} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={previewImageUrl} />
+    <meta name="twitter:image:alt" content={`${PUBLIC_SITE_NAME} preview`} />
+
+    <script type="application/ld+json" set:html={organizationJsonLd} />
+    <script type="application/ld+json" set:html={websiteJsonLd} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="pointer-events-none fixed inset-0 -z-10">
+      <div class="theme-orb theme-orb-a"></div>
+      <div class="theme-orb theme-orb-b"></div>
+    </div>
+    <Toasts client:load />
+    <AuthBootstrap client:load />
+    {showNavbar ? <Navbar client:only="react" /> : null}
+    <main class={resolvedMainClass}>
+      <slot />
+    </main>
+    {showBottomNav ? <MobileBottomNav client:only="react" /> : null}
+    <Footer client:only="react" />
+  </body>
+</html>
