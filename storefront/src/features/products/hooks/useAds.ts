@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { Ad } from "../types";
 import { api, getApiErrorMessage } from "@/lib/api";
@@ -33,6 +33,7 @@ export function useAds(baseUrl: string, queryString: string): AdsState {
       const total = typeof meta.total === "number" ? meta.total : items.length;
       return { items, total };
     },
+    placeholderData: keepPreviousData,
     staleTime: 10_000,
   });
 
@@ -43,7 +44,7 @@ export function useAds(baseUrl: string, queryString: string): AdsState {
   return {
     ads: query.data?.items ?? [],
     resultCount: query.data?.total ?? 0,
-    isLoading: query.isPending,
+    isLoading: query.isPending && !query.data,
     error: query.error ? getApiErrorMessage(query.error) : null,
     reload,
   };

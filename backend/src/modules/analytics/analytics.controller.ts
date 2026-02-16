@@ -17,6 +17,8 @@ import { AnalyticsService, VISITOR_COOKIE_NAME } from './analytics.service';
 import { TrackVisitDto } from './dto/track-visit.dto';
 import { getVisitorCookieOptions } from '../../common/http/cookies';
 import { VisitorSummaryQueryDto } from './dto/visitor-summary-query.dto';
+import { VisitorEventsQueryDto } from './dto/visitor-events-query.dto';
+import { MerchantEngagementQueryDto } from './dto/merchant-engagement-query.dto';
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -47,6 +49,101 @@ export class AnalyticsController {
       from: query.from,
       to: query.to,
       includeBots: query.includeBots,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('visitors/events')
+  async visitorEvents(@Query() query: VisitorEventsQueryDto) {
+    return this.analyticsService.getVisitorEvents({
+      from: query.from,
+      to: query.to,
+      includeBots: query.includeBots,
+      eventType: query.eventType,
+      q: query.q,
+      page: query.page,
+      limit: query.limit,
+      merchantId: query.merchantId,
+      adId: query.adId,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('merchants/engagement/overview')
+  async merchantEngagementOverview(@Query() query: MerchantEngagementQueryDto) {
+    return this.analyticsService.getMerchantEngagementOverview({
+      from: query.from,
+      to: query.to,
+      includeBots: query.includeBots,
+      merchantId: query.merchantId,
+      adId: query.adId,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('merchants/engagement/timeline')
+  async merchantEngagementTimeline(@Query() query: MerchantEngagementQueryDto) {
+    return this.analyticsService.getMerchantEngagementTimeline({
+      from: query.from,
+      to: query.to,
+      includeBots: query.includeBots,
+      merchantId: query.merchantId,
+      adId: query.adId,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('merchants/engagement/top-products')
+  async merchantEngagementTopProducts(@Query() query: MerchantEngagementQueryDto) {
+    return this.analyticsService.getMerchantEngagementTopProducts({
+      from: query.from,
+      to: query.to,
+      includeBots: query.includeBots,
+      merchantId: query.merchantId,
+      adId: query.adId,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('merchants/engagement/segments')
+  async merchantEngagementSegments(@Query() query: MerchantEngagementQueryDto) {
+    return this.analyticsService.getMerchantEngagementSegments({
+      from: query.from,
+      to: query.to,
+      includeBots: query.includeBots,
+      merchantId: query.merchantId,
+      adId: query.adId,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('merchants/engagement/data-quality')
+  async merchantEngagementDataQuality(@Query() query: MerchantEngagementQueryDto) {
+    return this.analyticsService.getMerchantEngagementDataQuality({
+      from: query.from,
+      to: query.to,
+      includeBots: query.includeBots,
+      merchantId: query.merchantId,
+      adId: query.adId,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('merchants/engagement')
+  async merchantEngagement(@Query() query: MerchantEngagementQueryDto) {
+    return this.analyticsService.getMerchantEngagementDashboard({
+      from: query.from,
+      to: query.to,
+      includeBots: query.includeBots,
+      merchantId: query.merchantId,
+      adId: query.adId,
     });
   }
 }

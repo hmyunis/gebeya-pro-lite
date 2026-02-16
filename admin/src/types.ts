@@ -140,6 +140,176 @@ export interface MerchantDetailResponse {
   };
 }
 
+export interface VisitorSummaryBucket {
+  visits: number;
+  uniqueVisitors: number;
+}
+
+export interface VisitorSummaryResponse {
+  range: {
+    from: string;
+    to: string;
+  };
+  includeBots: boolean;
+  totals: VisitorSummaryBucket;
+  byCountry: Array<
+    VisitorSummaryBucket & {
+      country: string;
+    }
+  >;
+  byReferrer: Array<
+    VisitorSummaryBucket & {
+      referrer: string;
+    }
+  >;
+  byDay: Array<
+    VisitorSummaryBucket & {
+      date: string;
+    }
+  >;
+}
+
+export interface VisitorEventRecord {
+  id: number;
+  createdAt: string;
+  visitorId: string;
+  eventType: "page_view" | "ad_preview" | "ad_click" | string;
+  path: string;
+  referrer: string | null;
+  referrerHost: string | null;
+  countryCode: string | null;
+  region: string | null;
+  city: string | null;
+  timezone: string | null;
+  language: string | null;
+  userAgent: string | null;
+  adId: number | null;
+  adName?: string | null;
+  merchantId: number | null;
+  deviceType?: "mobile" | "tablet" | "desktop" | "bot" | "unknown";
+  metadata: Record<string, string | number | boolean | null> | null;
+  isBot: boolean;
+}
+
+export interface VisitorEventsResponse {
+  range: {
+    from: string;
+    to: string;
+  };
+  includeBots: boolean;
+  filters: {
+    eventType: string | null;
+    q: string | null;
+    merchantId?: number | null;
+    adId?: number | null;
+  };
+  data: VisitorEventRecord[];
+  meta: PaginationMeta;
+}
+
+export interface MerchantEngagementSummary {
+  totalEvents: number;
+  uniqueVisitors: number;
+  productViews: number;
+  productClicks: number;
+  uniqueViewers: number;
+  uniqueClickers: number;
+  ctr: number;
+  uniqueCtr: number;
+}
+
+export interface MerchantEngagementBaseResponse {
+  range: {
+    from: string;
+    to: string;
+  };
+  includeBots: boolean;
+  filters: {
+    merchantId: number | null;
+    adId: number | null;
+  };
+}
+
+export interface MerchantEngagementOverviewResponse extends MerchantEngagementBaseResponse {
+  totals: MerchantEngagementSummary;
+  funnel: Array<{
+    key: "views" | "clicks";
+    label: string;
+    count: number;
+    uniqueVisitors: number;
+    conversionFromPrevious: number;
+  }>;
+}
+
+export interface MerchantEngagementTimelineResponse extends MerchantEngagementBaseResponse {
+  timeline: Array<{
+    date: string;
+    views: number;
+    clicks: number;
+    uniqueVisitors: number;
+  }>;
+}
+
+export interface MerchantEngagementTopProductsResponse
+  extends MerchantEngagementBaseResponse {
+  topProducts: Array<{
+    adId: number;
+    adName: string;
+    merchantId: number | null;
+    views: number;
+    clicks: number;
+    uniqueViewers: number;
+    uniqueClickers: number;
+    ctr: number;
+  }>;
+}
+
+export interface MerchantEngagementSegmentsResponse extends MerchantEngagementBaseResponse {
+  segments: {
+    byEventType: Array<{
+      eventType: string;
+      events: number;
+      uniqueVisitors: number;
+    }>;
+    byCountry: Array<{
+      country: string;
+      events: number;
+      uniqueVisitors: number;
+    }>;
+    byReferrer: Array<{
+      referrer: string;
+      events: number;
+      uniqueVisitors: number;
+    }>;
+    byDevice: Array<{
+      device: "mobile" | "tablet" | "desktop" | "bot" | "unknown";
+      events: number;
+      uniqueVisitors: number;
+    }>;
+    visitorLifecycle: {
+      newVisitors: number;
+      returningVisitors: number;
+    };
+  };
+}
+
+export interface MerchantEngagementDataQualityResponse
+  extends MerchantEngagementBaseResponse {
+  dataQuality: {
+    missingAdContext: number;
+    missingCountry: number;
+    missingReferrer: number;
+    botEvents: number;
+    eventsWithSchemaVersion: number;
+  };
+}
+
+export type MerchantEngagementResponse = MerchantEngagementOverviewResponse &
+  MerchantEngagementTimelineResponse &
+  MerchantEngagementTopProductsResponse &
+  MerchantEngagementSegmentsResponse &
+  MerchantEngagementDataQualityResponse;
+
 function stripTrailingSlash(value: string): string {
   return value.endsWith("/") ? value.slice(0, -1) : value;
 }

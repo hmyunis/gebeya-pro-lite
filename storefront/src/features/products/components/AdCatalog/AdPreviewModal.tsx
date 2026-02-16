@@ -1,12 +1,54 @@
 import { Button, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ScrollShadow } from "@heroui/react";
+import { useEffect, useState } from "react";
 import { MapPin, PhoneCall } from "lucide-react";
 import type { Ad } from "@/features/products/types";
 import { resolveImageUrl } from "@/lib/images";
 import { formatBirrLabel } from "@/lib/money";
 import { formatLocaleDate, useI18n } from "@/features/i18n";
 import { formatEthiopianPhoneForDisplay } from "@/features/products/utils/phoneNumber";
+import { API_BASE } from "@/config/env";
 import { AdImageCarousel } from "./AdImageCarousel";
 import { AdReviewsPanel } from "./AdReviewsPanel";
+
+const ANALYTICS_SCHEMA_VERSION = 2;
+const ANALYTICS_SESSION_STORAGE_KEY = "gebeya-analytics-session-id";
+
+function createAnalyticsId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+  return `e${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
+
+function getAnalyticsSessionId(): string {
+  if (typeof window === "undefined") {
+    return createAnalyticsId();
+  }
+  try {
+    const stored = window.sessionStorage.getItem(ANALYTICS_SESSION_STORAGE_KEY);
+    if (typeof stored === "string" && stored.trim().length >= 12) {
+      return stored.trim();
+    }
+    const generated = createAnalyticsId();
+    window.sessionStorage.setItem(ANALYTICS_SESSION_STORAGE_KEY, generated);
+    return generated;
+  } catch {
+    return createAnalyticsId();
+  }
+}
+
+function maskPhoneNumber(value: string): string {
+  const chars = value.split("");
+  let digitsSeen = 0;
+  for (let i = chars.length - 1; i >= 0; i -= 1) {
+    if (!/\d/.test(chars[i])) continue;
+    digitsSeen += 1;
+    if (digitsSeen > 2) {
+      chars[i] = "•";
+    }
+  }
+  return chars.join("");
+}
 
 export function AdPreviewModal({
   isOpen,
@@ -20,6 +62,7 @@ export function AdPreviewModal({
   imageBase: string;
 }) {
   const { locale, t } = useI18n();
+  const [isPhoneRevealed, setIsPhoneRevealed] = useState(false);
   const telHref = (() => {
     const rawPhone = String(ad?.phoneNumber ?? "").trim();
     if (!rawPhone) return null;
@@ -57,6 +100,62 @@ export function AdPreviewModal({
     ad?.description && ad.description.trim().length > 0
       ? ad.description
       : t("product.noDescription");
+  const trackPhoneInteraction = (
+    clickTarget: "phone_reveal" | "phone_call",
+  ) => {
+    if (!ad || !telHref || typeof window === "undefined") return;
+    const endpoint = `${API_BASE}/v1/analytics/visits`;
+    const payload = {
+      schemaVersion: ANALYTICS_SCHEMA_VERSION,
+      eventId: createAnalyticsId(),
+      sessionId: getAnalyticsSessionId(),
+      sentAt: new Date().toISOString(),
+      eventType: "ad_click",
+      path: `${window.location.pathname}${window.location.search}`,
+      referrer: document.referrer || undefined,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || undefined,
+      language: navigator.language || undefined,
+      metadata: {
+        adId: ad.id,
+        adSlug: ad.slug ?? null,
+        clickTarget,
+      },
+    };
+    const serialized = JSON.stringify(payload);
+    if (typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([serialized], { type: "application/json" });
+      navigator.sendBeacon(endpoint, blob);
+      return;
+    }
+    void fetch(endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: serialized,
+      keepalive: true,
+    });
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsPhoneRevealed(false);
+      return;
+    }
+    setIsPhoneRevealed(false);
+  }, [ad?.id, isOpen]);
+
+  const handleRevealPhoneClick = () => {
+    if (isPhoneRevealed) return;
+    setIsPhoneRevealed(true);
+    trackPhoneInteraction("phone_reveal");
+  };
+
+  const handlePhoneClick = () => {
+    trackPhoneInteraction("phone_call");
+  };
+
+  const formattedPhone = formatEthiopianPhoneForDisplay(ad?.phoneNumber);
+  const maskedPhone = maskPhoneNumber(formattedPhone);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="3xl" scrollBehavior="inside">
@@ -103,13 +202,30 @@ export function AdPreviewModal({
                     <div className="flex items-center gap-2 text-ink-muted">
                       <PhoneCall className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       {telHref ? (
-                        <a
-                          href={telHref}
-                          className="font-medium text-primary hover:underline"
-                          aria-label={`Call ${formatEthiopianPhoneForDisplay(ad.phoneNumber)}`}
-                        >
-                          {formatEthiopianPhoneForDisplay(ad.phoneNumber)}
-                        </a>
+                        isPhoneRevealed ? (
+                          <a
+                            href={telHref}
+                            onClick={handlePhoneClick}
+                            className="font-medium text-primary hover:underline"
+                            aria-label={`Call ${formattedPhone}`}
+                          >
+                            {formattedPhone}
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleRevealPhoneClick}
+                            className="group inline-flex items-center gap-2 rounded-md text-primary"
+                            aria-label="Reveal phone number"
+                          >
+                            <span className="font-medium blur-[3px] transition duration-150 group-hover:blur-[2px]">
+                              {maskedPhone}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-[0.14em] text-default-500">
+                              Click to reveal
+                            </span>
+                          </button>
+                        )
                       ) : (
                         <span>-</span>
                       )}

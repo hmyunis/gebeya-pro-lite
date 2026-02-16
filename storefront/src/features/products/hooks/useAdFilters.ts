@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { Category, PriceRange } from "../types";
 import { api, getApiErrorMessage } from "@/lib/api";
@@ -34,6 +34,7 @@ export function useAdFilters(baseUrl: string, queryString: string): AdFiltersSta
         : [];
       return { categories, priceRanges };
     },
+    placeholderData: keepPreviousData,
     staleTime: 60_000,
   });
 
@@ -44,7 +45,7 @@ export function useAdFilters(baseUrl: string, queryString: string): AdFiltersSta
   return {
     categories: query.data?.categories ?? [],
     priceRanges: query.data?.priceRanges ?? [],
-    isLoading: query.isPending,
+    isLoading: query.isPending && !query.data,
     error: query.error ? getApiErrorMessage(query.error) : null,
     reload,
   };

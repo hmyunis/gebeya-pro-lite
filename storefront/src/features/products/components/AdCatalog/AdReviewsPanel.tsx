@@ -21,6 +21,8 @@ import { PUBLIC_TELEGRAM_BOT_NAME } from "@/config/env";
 
 const STARS = [1, 2, 3, 4, 5] as const;
 const REVIEW_DRAFT_STORAGE_KEY = "pending-ad-review-draft-v1";
+const ANALYTICS_SESSION_STORAGE_KEY = "gebeya-analytics-session-id";
+const ANALYTICS_SCHEMA_VERSION = 2;
 
 type StoredReviewDraft = {
   adId: number;
@@ -76,6 +78,32 @@ function clearStoredDraft(adId: number): void {
   const current = parseStoredReviewDraft(window.sessionStorage.getItem(REVIEW_DRAFT_STORAGE_KEY));
   if (!current || current.adId !== adId) return;
   window.sessionStorage.removeItem(REVIEW_DRAFT_STORAGE_KEY);
+}
+
+function createAnalyticsId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+  return `e${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
+
+function getAnalyticsSessionId(): string {
+  if (typeof window === "undefined") {
+    return createAnalyticsId();
+  }
+
+  try {
+    const stored = window.sessionStorage.getItem(ANALYTICS_SESSION_STORAGE_KEY);
+    if (typeof stored === "string" && stored.trim().length >= 12) {
+      return stored.trim();
+    }
+
+    const generated = createAnalyticsId();
+    window.sessionStorage.setItem(ANALYTICS_SESSION_STORAGE_KEY, generated);
+    return generated;
+  } catch {
+    return createAnalyticsId();
+  }
 }
 
 export function AdReviewsPanel({
@@ -162,11 +190,16 @@ export function AdReviewsPanel({
 
     void api
       .post("/analytics/visits", {
+        schemaVersion: ANALYTICS_SCHEMA_VERSION,
+        eventId: createAnalyticsId(),
+        sessionId: getAnalyticsSessionId(),
+        sentAt: new Date().toISOString(),
         eventType: "ad_preview",
         path,
         metadata: {
           adId: ad.id,
           adSlug: ad.slug ?? null,
+          interaction: "preview_modal_open",
         },
       })
       .catch(() => undefined);

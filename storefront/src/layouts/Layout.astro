@@ -127,8 +127,10 @@ const analyticsEndpoint = `${API_BASE}/v1/analytics/visits`;
       (() => {
         const endpoint = analyticsEndpoint;
         const visitorStorageKey = "gebeya-visitor-id";
+        const sessionStorageKey = "gebeya-analytics-session-id";
+        const schemaVersion = 2;
 
-        const createVisitorId = () => {
+        const createRandomId = () => {
           if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
             return crypto.randomUUID().replace(/-/g, "");
           }
@@ -140,20 +142,51 @@ const analyticsEndpoint = `${API_BASE}/v1/analytics/visits`;
           const stored = localStorage.getItem(visitorStorageKey);
           visitorId = typeof stored === "string" && stored.trim().length >= 16 ? stored.trim() : null;
           if (!visitorId) {
-            visitorId = createVisitorId();
+            visitorId = createRandomId();
             localStorage.setItem(visitorStorageKey, visitorId);
           }
         } catch {
-          visitorId = createVisitorId();
+          visitorId = createRandomId();
         }
 
+        let sessionId = null;
+        try {
+          const stored = sessionStorage.getItem(sessionStorageKey);
+          sessionId =
+            typeof stored === "string" && stored.trim().length >= 12 ? stored.trim() : null;
+          if (!sessionId) {
+            sessionId = createRandomId();
+            sessionStorage.setItem(sessionStorageKey, sessionId);
+          }
+        } catch {
+          sessionId = createRandomId();
+        }
+
+        const searchParams = new URLSearchParams(window.location.search);
+        const utmSource = searchParams.get("utm_source");
+        const utmMedium = searchParams.get("utm_medium");
+        const utmCampaign = searchParams.get("utm_campaign");
+        const utmTerm = searchParams.get("utm_term");
+        const utmContent = searchParams.get("utm_content");
+
         const payload = {
+          schemaVersion,
+          eventId: createRandomId(),
+          sessionId,
+          sentAt: new Date().toISOString(),
           eventType: "page_view",
           visitorId,
           path: `${window.location.pathname}${window.location.search}`,
           referrer: document.referrer || undefined,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || undefined,
           language: navigator.language || undefined,
+          metadata: {
+            utmSource: utmSource || undefined,
+            utmMedium: utmMedium || undefined,
+            utmCampaign: utmCampaign || undefined,
+            utmTerm: utmTerm || undefined,
+            utmContent: utmContent || undefined,
+          },
         };
 
         const serialized = JSON.stringify(payload);

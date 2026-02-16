@@ -3,10 +3,34 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsInt,
+  Min,
+  Max,
   MaxLength,
 } from 'class-validator';
 
 export class TrackVisitDto {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  schemaVersion?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  eventId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  sessionId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  sentAt?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(128)

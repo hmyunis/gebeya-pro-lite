@@ -17,7 +17,7 @@ import {
   Chip,
 } from "@heroui/react";
 import { Drawer, DrawerBody, DrawerContent, DrawerHeader } from "@heroui/drawer";
-import { CaretDown, House, Package, SignOut, UserCircle, List, SidebarSimple, Storefront } from "@phosphor-icons/react";
+import { CaretDown, ChartBar, House, Package, SignOut, UserCircle, List, SidebarSimple, Storefront } from "@phosphor-icons/react";
 import { cn } from "../lib/utils";
 import DashboardShellSkeleton from "./DashboardShellSkeleton";
 
@@ -59,6 +59,7 @@ export default function DashboardLayout() {
   }> = [
     { name: "Dashboard", path: "/", icon: <House className="h-5 w-5" /> },
     { name: "Ads", path: "/ads", icon: <Package className="h-5 w-5" /> },
+    { name: "Analytics", path: "/analytics", icon: <ChartBar className="h-5 w-5" /> },
     { name: "Merchants", path: "/merchants", icon: <Storefront className="h-5 w-5" /> },
     { name: "Profile", path: "/profile", icon: <UserCircle className="h-5 w-5" /> },
   ];
