@@ -75,8 +75,8 @@ function FooterContent() {
                             <Logo />
                             <p className="max-w-md text-sm leading-relaxed text-slate-400">
                                 {t("footer.about")}
-                                <br />
-                                <br />
+                            </p>
+                            <p className="max-w-md text-sm leading-relaxed text-slate-400">
                                 {t("footer.about2")}
                             </p>
                         </div>
@@ -109,7 +109,7 @@ function FooterContent() {
                     </div>
 
                     {/* Right Column: Merchant CTA */}
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur-sm">
+                    <div className="h-fit self-start rounded-2xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur-sm">
                         <h3 className="text-sm font-semibold text-white">{t("footer.postAdTitle")}</h3>
                         <p className="mt-2 text-sm leading-relaxed text-slate-400">
                             {t("footer.postAdDescription")}

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { validate } from './config/env.validation';
 import { DatabaseModule } from './modules/database/database.module';
 import { UsersModule } from './modules/users/users.module';
@@ -10,6 +11,7 @@ import { TelegrafModule } from 'nestjs-telegraf';
 import { BotModule } from './modules/bot/bot.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { MerchantsModule } from './modules/merchants/merchants.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { MerchantsModule } from './modules/merchants/merchants.module';
         limit: 10,
       },
     ]),
+    ScheduleModule.forRoot(),
     TelegrafModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -40,6 +43,7 @@ import { MerchantsModule } from './modules/merchants/merchants.module';
     BotModule,
     AnalyticsModule,
     MerchantsModule,
+    AnnouncementsModule,
   ],
   controllers: [],
   providers: [],

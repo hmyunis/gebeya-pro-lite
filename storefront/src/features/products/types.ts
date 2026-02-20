@@ -4,6 +4,7 @@ export type Ad = {
   slug?: string;
   price: number | string;
   status?: "PENDING" | "APPROVED" | "REJECTED";
+  isActive?: boolean;
   imageUrl?: string;
   imageUrls?: string[] | null;
   description?: string;
@@ -54,7 +55,9 @@ export type AdComment = {
   id: number;
   adId: number;
   userId: number;
-  rating: number;
+  parentId: number | null;
+  depth: number;
+  rating: number | null;
   comment: string | null;
   isEdited: boolean;
   editedAt?: string | null;
@@ -64,11 +67,21 @@ export type AdComment = {
     displayName: string;
     username?: string | null;
     avatarUrl?: string | null;
+    isReviewBlocked?: boolean;
   };
+  replies?: AdComment[];
 };
 
 export type AdCommentMeta = {
   totalReviews: number;
   averageRating: number;
+  comments?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 };
 

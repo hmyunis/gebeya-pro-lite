@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Ad } from './entities/ad.entity';
 import { Category } from './entities/category.entity';
@@ -10,13 +10,16 @@ import { User } from '../users/entities/user.entity';
 import { AdComment } from './entities/ad-comment.entity';
 import { AdCommentsService } from './ad-comments.service';
 import { MerchantsModule } from '../merchants/merchants.module';
+import { BotModule } from '../bot/bot.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Ad, Category, User, AdComment]),
     MerchantsModule,
+    forwardRef(() => BotModule),
   ],
   controllers: [AdsController, CategoriesController],
   providers: [AdsService, ImageService, AdCommentsService],
+  exports: [AdsService],
 })
 export class AdsModule {}

@@ -5,6 +5,76 @@ import { API_BASE } from "@/config/env";
 ---
 
 <Layout title="Home">
-	<AdCatalog client:only="react" apiBase={API_BASE} imageBase={API_BASE} />
+  <style is:global>
+    html[data-home-ready="true"] #home-placeholder {
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+  </style>
+
+  <section class="relative min-h-190">
+    <div
+      id="home-placeholder"
+      aria-hidden="true"
+      class="pointer-events-none absolute inset-0 z-0 opacity-100 transition-opacity duration-300"
+    >
+      <div class="mt-10 space-y-6 pb-24 animate-pulse">
+        <div class="flex flex-col items-center gap-4">
+          <div class="space-y-3 text-center">
+            <div class="mx-auto h-2.5 w-28 rounded-full theme-skeleton"></div>
+            <div class="mx-auto h-10 w-72 rounded-2xl theme-skeleton"></div>
+          </div>
+          <div class="flex w-full max-w-2xl items-center gap-2">
+            <div class="h-10 w-10 shrink-0 rounded-full theme-skeleton md:hidden"></div>
+            <div class="h-10 w-full rounded-full theme-skeleton"></div>
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside class="hidden lg:block">
+            <div class="glass rounded-3xl p-4">
+              <div class="mb-4 h-3 w-28 rounded-full theme-skeleton"></div>
+              <div class="space-y-3">
+                {
+                  Array.from({ length: 6 }).map(() => (
+                    <div class="h-14 w-full rounded-2xl theme-skeleton"></div>
+                  ))
+                }
+              </div>
+            </div>
+          </aside>
+
+          <div>
+            <div class="mb-4 flex gap-2">
+              <div class="h-7 w-24 rounded-full theme-skeleton"></div>
+              <div class="h-7 w-32 rounded-full theme-skeleton"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+              {
+                Array.from({ length: 8 }).map(() => (
+                  <div class="glass-strong relative flex h-full flex-col overflow-hidden rounded-2xl">
+                    <div class="relative aspect-4/3 overflow-hidden theme-skeleton"></div>
+                    <div class="flex flex-1 flex-col gap-3 p-4">
+                      <div class="h-4 w-3/4 rounded-full theme-skeleton"></div>
+                      <div class="mt-auto flex items-center justify-between">
+                        <div class="h-4 w-16 rounded-full theme-skeleton"></div>
+                        <div class="h-3 w-10 rounded-full theme-skeleton"></div>
+                      </div>
+                      <div class="h-9 rounded-full theme-skeleton"></div>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative z-10">
+      <AdCatalog client:only="react" apiBase={API_BASE} imageBase={API_BASE} />
+    </div>
+  </section>
 </Layout>
 

@@ -45,6 +45,14 @@ export default function AdCatalog({
   apiBase: string;
   imageBase: string;
 }) {
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.setAttribute("data-home-ready", "true");
+    return () => {
+      document.documentElement.removeAttribute("data-home-ready");
+    };
+  }, []);
+
   return (
     <I18nProvider>
       <QueryProvider>

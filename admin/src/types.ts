@@ -50,7 +50,9 @@ export interface AdReview {
   id: number;
   adId: number;
   userId: number;
-  rating: number;
+  parentId: number | null;
+  depth: number;
+  rating: number | null;
   comment: string | null;
   isEdited: boolean;
   editedAt?: string | null;
@@ -62,6 +64,7 @@ export interface AdReview {
     avatarUrl?: string | null;
     isReviewBlocked?: boolean;
   };
+  replies?: AdReview[];
 }
 
 export interface AdReviewMeta {

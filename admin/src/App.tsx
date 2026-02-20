@@ -8,6 +8,7 @@ import AdminProfilePage from "./pages/profile/AdminProfilePage";
 import MerchantsPage from "./pages/merchants/MerchantsPage";
 import MerchantDetailPage from "./pages/merchants/MerchantDetailPage";
 import AnalyticsPage from "./pages/analytics/AnalyticsPage";
+import AnnouncementsPage from "./pages/announcements/AnnouncementsPage";
 import RequireAdmin from "./components/RequireAdmin";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
         >
           <Route index element={<DashboardHome />} />
           <Route path="ads" element={<AdsPage />} />
+          <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="merchants" element={<MerchantsPage />} />
           <Route path="merchants/:merchantId" element={<MerchantDetailPage />} />

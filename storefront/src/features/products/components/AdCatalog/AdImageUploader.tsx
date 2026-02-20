@@ -16,6 +16,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { useI18n } from "@/features/i18n";
 
 const MAX_AD_IMAGES = 5;
 const SWIPE_THRESHOLD = 40;
@@ -42,6 +43,7 @@ export default function AdImageUploader({
 }: {
   onSelectionChange: (selection: AdImageSelection) => void;
 }) {
+  const { t } = useI18n();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const slotsRef = useRef<ImageSlot[]>([]);
   const [slots, setSlots] = useState<ImageSlot[]>(() => buildEmptySlots());
@@ -162,7 +164,7 @@ export default function AdImageUploader({
               {slotUrl ? (
                 <img
                   src={slotUrl}
-                  alt={`Ad slot ${index + 1}`}
+                  alt={t("adImageUploader.slotAlt", { index: index + 1 })}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -172,7 +174,9 @@ export default function AdImageUploader({
                   onClick={() => inputRefs.current[index]?.click()}
                 >
                   <Upload className="h-4 w-4" />
-                  <span className="text-[10px] font-medium">Slot {index + 1}</span>
+                  <span className="text-[10px] font-medium">
+                    {t("adImageUploader.slotLabel", { index: index + 1 })}
+                  </span>
                 </button>
               )}
 
@@ -186,7 +190,9 @@ export default function AdImageUploader({
                     type="button"
                     className="rounded p-1 text-white/90 transition hover:bg-black/30"
                     onClick={() => inputRefs.current[index]?.click()}
-                    aria-label={`Upload image for slot ${index + 1}`}
+                    aria-label={t("adImageUploader.uploadSlotAria", {
+                      index: index + 1,
+                    })}
                   >
                     <Upload className="h-3.5 w-3.5" />
                   </button>
@@ -194,7 +200,9 @@ export default function AdImageUploader({
                     type="button"
                     className="rounded p-1 text-white/90 transition hover:bg-black/30"
                     onClick={() => clearSlot(index)}
-                    aria-label={`Remove image from slot ${index + 1}`}
+                    aria-label={t("adImageUploader.removeSlotAria", {
+                      index: index + 1,
+                    })}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -216,7 +224,7 @@ export default function AdImageUploader({
           }}
           isDisabled={previewImages.length === 0}
         >
-          Preview Images
+          {t("adImageUploader.previewImages")}
         </Button>
         <Button
           size="sm"
@@ -226,12 +234,12 @@ export default function AdImageUploader({
           onPress={clearAllSlots}
           isDisabled={previewImages.length === 0}
         >
-          Clear All
+          {t("adImageUploader.clearAll")}
         </Button>
       </div>
 
       <p className="text-xs text-default-400">
-        Up to {MAX_AD_IMAGES} images. Fill each slot individually.
+        {t("adImageUploader.limitHint", { count: MAX_AD_IMAGES })}
       </p>
 
       <Modal
@@ -243,7 +251,7 @@ export default function AdImageUploader({
         <ModalContent>
           <ModalHeader className="flex items-center gap-2">
             <Images className="h-5 w-5 text-primary" />
-            <span>Ad Image Preview</span>
+            <span>{t("adImageUploader.modalTitle")}</span>
           </ModalHeader>
           <ModalBody>
             {currentPreview ? (
@@ -276,7 +284,7 @@ export default function AdImageUploader({
                       type="button"
                       onClick={previousPreview}
                       className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white"
-                      aria-label="Previous image"
+                      aria-label={t("adImageUploader.previousImage")}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -284,7 +292,7 @@ export default function AdImageUploader({
                       type="button"
                       onClick={nextPreview}
                       className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white"
-                      aria-label="Next image"
+                      aria-label={t("adImageUploader.nextImage")}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -304,7 +312,7 @@ export default function AdImageUploader({
                       "h-1.5 rounded-full transition-all",
                       index === activePreviewIndex ? "w-4 bg-primary" : "w-1.5 bg-default-300",
                     ].join(" ")}
-                    aria-label={`View image ${index + 1}`}
+                    aria-label={t("adImageUploader.viewImageAria", { index: index + 1 })}
                   />
                 ))}
               </div>
@@ -312,7 +320,7 @@ export default function AdImageUploader({
           </ModalBody>
           <ModalFooter>
             <Button variant="light" onPress={() => setIsPreviewOpen(false)}>
-              Close
+              {t("common.close")}
             </Button>
           </ModalFooter>
         </ModalContent>

@@ -5,6 +5,7 @@ import MobileBottomNav from "@/features/navigation/components/MobileBottomNav";
 import Footer from "@/features/footer/components/Footer";
 import Toasts from "@/app/Toasts";
 import AuthBootstrap from "@/features/auth/components/AuthBootstrap";
+import LocalePreferenceModal from "@/features/i18n/components/LocalePreferenceModal";
 import {
   API_BASE,
   PUBLIC_AUTHOR_NAME,
@@ -88,10 +89,10 @@ const analyticsEndpoint = `${API_BASE}/v1/analytics/visits`;
         const key = "gebeya-storefront-locale";
         try {
           const value = localStorage.getItem(key);
-          const locale = value === "en" ? "en-US" : "am-ET";
+          const locale = value === "am" ? "am-ET" : "en-US";
           document.documentElement.lang = locale;
         } catch {
-          document.documentElement.lang = "am-ET";
+          document.documentElement.lang = "en-US";
         }
       })();
     </script>
@@ -103,21 +104,14 @@ const analyticsEndpoint = `${API_BASE}/v1/analytics/visits`;
 
         try {
           const stored = localStorage.getItem(storageKey);
-          const theme =
-            stored === light || stored === dark
-              ? stored
-              : window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? dark
-                : light;
+          const theme = stored === light || stored === dark ? stored : dark;
 
           const root = document.documentElement;
           root.dataset.theme = theme;
           root.classList.toggle("dark", theme === dark);
         } catch {
           const root = document.documentElement;
-          const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? dark
-            : light;
+          const fallbackTheme = dark;
           root.dataset.theme = fallbackTheme;
           root.classList.toggle("dark", fallbackTheme === dark);
         }
@@ -272,6 +266,7 @@ const analyticsEndpoint = `${API_BASE}/v1/analytics/visits`;
     </div>
     <Toasts client:load />
     <AuthBootstrap client:load />
+    <LocalePreferenceModal client:load />
     {showNavbar ? <Navbar client:only="react" /> : null}
     <main class={resolvedMainClass}>
       <slot />

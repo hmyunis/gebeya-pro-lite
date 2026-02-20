@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Card, CardBody, CardHeader, Spinner } from "@heroui/react";
+import { Button, Card, CardBody, CardHeader, Spinner } from "@heroui/react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { I18nProvider, LanguageToggle, useI18n } from "@/features/i18n";
 import { useTelegramAuthWidget } from "@/features/auth/hooks/useTelegramAuthWidget";
+import { ArrowLeft } from "lucide-react";
 
 export default function AuthLogin({
   telegramBot,
@@ -45,7 +46,17 @@ function AuthLoginBody({
 
   return (
     <div className="space-y-6 md:space-y-7">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <Button
+          as="a"
+          href="/"
+          variant="flat"
+          radius="full"
+          size="sm"
+          startContent={<ArrowLeft size={16} />}
+        >
+          {t("common.home")}
+        </Button>
         <LanguageToggle />
       </div>
 

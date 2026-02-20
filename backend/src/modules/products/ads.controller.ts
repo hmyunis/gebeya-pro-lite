@@ -17,6 +17,7 @@ import { AdsService } from './ads.service';
 import { CreateAdDto } from './dto/create-ad.dto';
 import { UpdateAdDto } from './dto/update-ad.dto';
 import { CreateAdCommentDto } from './dto/create-ad-comment.dto';
+import { UpdateAdCommentDto } from './dto/update-ad-comment.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -179,8 +180,19 @@ export class AdsController {
   }
 
   @Get(':id/comments')
-  async adComments(@Param('id', ParseIntPipe) id: number) {
-    return this.adCommentsService.getAdComments(id);
+  async adComments(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const { page: safePage, limit: safeLimit } = normalizePagination(
+      page,
+      limit,
+    );
+    return this.adCommentsService.getAdComments(id, {
+      page: safePage,
+      limit: safeLimit,
+    });
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -204,6 +216,22 @@ export class AdsController {
     );
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/comments/:commentId')
+  async editComment(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @Body() dto: UpdateAdCommentDto,
+  ) {
+    return this.adCommentsService.editAdComment(
+      id,
+      req.user.userId,
+      commentId,
+      dto,
+    );
+  }
+
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Delete(':id/comments/:commentId')
@@ -212,6 +240,20 @@ export class AdsController {
     @Param('commentId', ParseIntPipe) commentId: number,
   ) {
     return this.adCommentsService.removeAdComment(id, commentId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id/comments/:commentId/mine')
+  async removeOwnComment(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('commentId', ParseIntPipe) commentId: number,
+  ) {
+    return this.adCommentsService.removeOwnAdComment(
+      id,
+      req.user.userId,
+      commentId,
+    );
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -450,7 +492,7 @@ export class AdsController {
     ];
 
     if (allowAllStatuses && unique.includes('ALL')) {
-      return undefined;
+      return Object.values(AdStatus);
     }
 
     const parsed = unique.filter((entry): entry is AdStatus =>

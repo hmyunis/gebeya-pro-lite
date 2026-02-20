@@ -14,9 +14,11 @@ import {
   addToast,
 } from "@heroui/react";
 import { useMutation } from "@tanstack/react-query";
+import { SendHorizontal } from "lucide-react";
 
 import { api, getApiErrorMessage } from "@/lib/api";
 import { requireLogin } from "@/features/auth/store/authStore";
+import { useI18n } from "@/features/i18n";
 import type { Ad, Category } from "@/features/products/types";
 import { isValidEthiopianPhoneInput } from "@/features/products/utils/phoneNumber";
 import { getCurrentPathWithUpdatedQueryParam } from "@/lib/navigation";
@@ -48,6 +50,7 @@ export function PostAdModal({
   isLoggedIn: boolean;
   onPosted: (createdAd?: Ad) => void;
 }) {
+  const { t } = useI18n();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -65,8 +68,8 @@ export function PostAdModal({
     const trimmed = phoneNumber.trim();
     if (!trimmed) return null;
     if (isValidEthiopianPhoneInput(trimmed)) return null;
-    return "Use 09XXXXXXXX or +2519XXXXXXXX format.";
-  }, [phoneNumber]);
+    return t("merchantPostAd.phoneFormatError");
+  }, [phoneNumber, t]);
 
   const activeCategory = useMemo(
     () =>
@@ -75,6 +78,37 @@ export function PostAdModal({
     [categories, categoryId],
   );
   const dynamicFields = activeCategory?.dynamicFields ?? [];
+  const reviewDynamicRows = useMemo(
+    () =>
+      dynamicFields.map((field) => {
+        const rawValue = itemDetails[field.key];
+        if (field.type === "boolean") {
+          return {
+            key: field.key,
+            label: field.label,
+            value: rawValue
+              ? t("merchantPostAd.boolean.yes")
+              : t("merchantPostAd.boolean.no"),
+          };
+        }
+        const textValue = String(rawValue ?? "").trim();
+        return {
+          key: field.key,
+          label: field.label,
+          value: textValue || "-",
+        };
+      }),
+    [dynamicFields, itemDetails, t],
+  );
+  const reviewImagePreviews = useMemo(
+    () =>
+      imageSelection.newFiles.slice(0, 5).map((file) => ({
+        id: `${file.name}-${file.size}-${file.lastModified}`,
+        name: file.name,
+        url: URL.createObjectURL(file),
+      })),
+    [imageSelection.newFiles],
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -107,6 +141,15 @@ export function PostAdModal({
       return next;
     });
   }, [dynamicFields]);
+
+  useEffect(
+    () => () => {
+      for (const preview of reviewImagePreviews) {
+        URL.revokeObjectURL(preview.url);
+      }
+    },
+    [reviewImagePreviews],
+  );
 
   const isStepOneValid = useMemo(() => {
     const phoneValid = isValidEthiopianPhoneInput(phoneNumber.trim());
@@ -196,16 +239,28 @@ export function PostAdModal({
   };
 
   const handleNext = () => {
-    if (!isStepOneValid) return;
+    if (!isStepOneValid || !hasAtLeastOneImage) return;
     setStep(2);
   };
 
+  const hasAtLeastOneImage =
+    imageSelection.filledSlotsCount > 0 || imageSelection.newFiles.length > 0;
+
   const handleSubmit = async () => {
+    if (!hasAtLeastOneImage) {
+      addToast({
+        title: t("merchantPostAd.toast.imageRequired.title"),
+        description: t("merchantPostAd.toast.imageRequired.description"),
+        color: "warning",
+      });
+      return;
+    }
+
     if (!isLoggedIn) {
       persistDraft();
       addToast({
-        title: "Telegram login required",
-        description: "Sign in with Telegram to submit your ad.",
+        title: t("merchantPostAd.toast.loginRequired.title"),
+        description: t("merchantPostAd.toast.loginRequired.description"),
         color: "warning",
       });
       requireLogin(getCurrentPathWithUpdatedQueryParam("openPostAd", "1"));
@@ -215,8 +270,8 @@ export function PostAdModal({
     try {
       const createdAd = await createAdMutation.mutateAsync();
       addToast({
-        title: "Ad submitted",
-        description: "Your ad is pending admin approval.",
+        title: t("merchantPostAd.toast.submitted.title"),
+        description: t("merchantPostAd.toast.submitted.description"),
         color: "success",
       });
       clearDraftAndForm();
@@ -224,7 +279,7 @@ export function PostAdModal({
       onPosted(createdAd);
     } catch (error) {
       addToast({
-        title: "Submission failed",
+        title: t("merchantPostAd.toast.submissionFailed.title"),
         description: getApiErrorMessage(error),
         color: "danger",
       });
@@ -243,14 +298,16 @@ export function PostAdModal({
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
-          {step === 1 ? "Post an Ad" : "Review & Submit"}
+          {step === 1
+            ? t("merchantPostAd.header.post")
+            : t("merchantPostAd.header.review")}
         </ModalHeader>
         <ModalBody>
           {step === 1 ? (
             <div className="space-y-4">
               <Input
-                label="Ad title"
-                placeholder="e.g. iPhone 15 Pro"
+                label={t("merchantPostAd.fields.title")}
+                placeholder={t("merchantPostAd.fields.titlePlaceholder")}
                 value={name}
                 onValueChange={setName}
                 isRequired
@@ -258,13 +315,13 @@ export function PostAdModal({
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input
                   type="number"
-                  label="Price (Birr)"
+                  label={t("merchantPostAd.fields.price")}
                   value={price}
                   onValueChange={setPrice}
                   isRequired
                 />
                 <Select
-                  label="Category"
+                  label={t("merchantPostAd.fields.category")}
                   selectedKeys={categoryId ? new Set([categoryId]) : new Set([])}
                   onSelectionChange={(keys) => {
                     const selected =
@@ -281,8 +338,8 @@ export function PostAdModal({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input
-                  label="Phone number"
-                  placeholder="09XXXXXXXX or +2519XXXXXXXX"
+                  label={t("merchantPostAd.fields.phone")}
+                  placeholder={t("merchantPostAd.fields.phonePlaceholder")}
                   value={phoneNumber}
                   onValueChange={setPhoneNumber}
                   isInvalid={Boolean(phoneNumberError)}
@@ -290,8 +347,8 @@ export function PostAdModal({
                   isRequired
                 />
                 <Input
-                  label="Address"
-                  placeholder="Bole, Addis Ababa"
+                  label={t("merchantPostAd.fields.address")}
+                  placeholder={t("merchantPostAd.fields.addressPlaceholder")}
                   value={address}
                   onValueChange={setAddress}
                   isRequired
@@ -299,7 +356,9 @@ export function PostAdModal({
               </div>
               {dynamicFields.length > 0 ? (
                 <div className="space-y-3 rounded-2xl border border-default-200 p-3">
-                  <p className="text-sm font-semibold">Category details</p>
+                  <p className="text-sm font-semibold">
+                    {t("merchantPostAd.fields.categoryDetails")}
+                  </p>
                   {dynamicFields.map((field) => {
                     const value = itemDetails[field.key];
                     if (field.type === "boolean") {
@@ -365,8 +424,8 @@ export function PostAdModal({
                 </div>
               ) : null}
               <Textarea
-                label="Description"
-                placeholder="Write ad details..."
+                label={t("merchantPostAd.fields.description")}
+                placeholder={t("merchantPostAd.fields.descriptionPlaceholder")}
                 value={description}
                 onValueChange={setDescription}
                 minRows={4}
@@ -375,17 +434,113 @@ export function PostAdModal({
               <AdImageUploader onSelectionChange={setImageSelection} />
             </div>
           ) : (
-            <div className="space-y-3 text-sm">
-              <p className="font-semibold">{name}</p>
-              <p>{description}</p>
-              <p>Price: {price} Birr</p>
-              <p>Category: {activeCategory?.name ?? "-"}</p>
-              <p>Phone: {phoneNumber}</p>
-              <p>Address: {address}</p>
-              <p>Photos: {imageSelection.filledSlotsCount}</p>
+            <div className="space-y-4 text-sm">
+              <div className="overflow-hidden rounded-2xl border border-default-200">
+                <div className="border-b border-default-200 bg-default-100/50 px-4 py-2.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-default-600">
+                    {t("merchantPostAd.review.basicInfo")}
+                  </p>
+                </div>
+                <div className="border-b border-default-200 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-wide text-default-500">
+                    {t("merchantPostAd.fields.title")}
+                  </p>
+                  <p className="mt-1 font-semibold text-foreground">{name}</p>
+                </div>
+                <div className="grid border-b border-default-200 sm:grid-cols-2">
+                  <div className="border-b border-default-200 px-4 py-3 sm:border-b-0 sm:border-r sm:border-default-200">
+                    <p className="text-[11px] uppercase tracking-wide text-default-500">
+                      {t("merchantPostAd.review.price")}
+                    </p>
+                    <p className="mt-1 text-foreground">{price} Birr</p>
+                  </div>
+                  <div className="px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-default-500">
+                      {t("merchantPostAd.fields.category")}
+                    </p>
+                    <p className="mt-1 text-foreground">{activeCategory?.name ?? "-"}</p>
+                  </div>
+                </div>
+                <div className="grid border-b border-default-200 bg-default-100/35 sm:grid-cols-2">
+                  <div className="border-b border-default-200 px-4 py-3 sm:border-b-0 sm:border-r sm:border-default-200">
+                    <p className="text-[11px] uppercase tracking-wide text-default-500">
+                      {t("merchantPostAd.review.phone")}
+                    </p>
+                    <p className="mt-1 text-foreground">{phoneNumber}</p>
+                  </div>
+                  <div className="px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-default-500">
+                      {t("merchantPostAd.fields.address")}
+                    </p>
+                    <p className="mt-1 text-foreground">{address}</p>
+                  </div>
+                </div>
+                <div className="px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-wide text-default-500">
+                    {t("merchantPostAd.fields.description")}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-foreground">{description}</p>
+                </div>
+              </div>
+
+              {reviewDynamicRows.length > 0 ? (
+                <div className="overflow-hidden rounded-2xl border border-default-200">
+                  <div className="border-b border-default-200 bg-default-100/50 px-4 py-2.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-default-600">
+                      {t("merchantPostAd.fields.categoryDetails")}
+                  </p>
+                </div>
+                  <div className="divide-y divide-default-200">
+                    {reviewDynamicRows.map((row, index) => (
+                      <div
+                        key={row.key}
+                        className={`grid gap-2 px-4 py-3 sm:grid-cols-[180px_minmax(0,1fr)] ${index % 2 === 0 ? "bg-default-100/30" : ""}`}
+                      >
+                        <p className="text-[11px] uppercase tracking-wide text-default-500">
+                          {row.label}
+                        </p>
+                        <p className="text-foreground">{row.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="overflow-hidden rounded-2xl border border-default-200">
+                <div className="border-b border-default-200 bg-default-100/50 px-4 py-2.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-default-600">
+                    {t("merchantPostAd.review.photos", {
+                      count: imageSelection.filledSlotsCount,
+                    })}
+                  </p>
+                </div>
+                {reviewImagePreviews.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3">
+                    {reviewImagePreviews.map((preview, index) => (
+                      <figure key={preview.id} className="space-y-2">
+                        <img
+                          src={preview.url}
+                          alt={t("merchantPostAd.review.selectedImageAlt", {
+                            index: index + 1,
+                          })}
+                          className="h-28 w-full rounded-xl border border-default-200 object-cover"
+                        />
+                        <figcaption className="truncate text-xs text-default-500">
+                          {preview.name}
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="px-4 py-3 text-default-500">
+                    {t("merchantPostAd.review.noPhotos")}
+                  </p>
+                )}
+              </div>
+
               {!isLoggedIn ? (
                 <div className="rounded-xl border border-warning-300 bg-warning-50 p-3 text-warning-800">
-                  Telegram login is required to submit this ad.
+                  {t("merchantPostAd.review.loginRequired")}
                 </div>
               ) : null}
             </div>
@@ -395,23 +550,31 @@ export function PostAdModal({
           {step === 1 ? (
             <>
               <Button variant="light" onPress={onClose}>
-                Cancel
+                {t("common.cancel")}
               </Button>
-              <Button color="primary" onPress={handleNext} isDisabled={!isStepOneValid}>
-                Next
+              <Button
+                color="primary"
+                onPress={handleNext}
+                isDisabled={!isStepOneValid || !hasAtLeastOneImage}
+              >
+                {t("merchantPostAd.actions.next")}
               </Button>
             </>
           ) : (
             <>
               <Button variant="light" onPress={() => setStep(1)}>
-                Back
+                {t("common.back")}
               </Button>
               <Button
-                color="primary"
+                color={hasAtLeastOneImage ? "primary" : "default"}
                 onPress={handleSubmit}
                 isLoading={createAdMutation.isPending}
+                isDisabled={!hasAtLeastOneImage || createAdMutation.isPending}
+                startContent={<SendHorizontal size={16} />}
               >
-                {isLoggedIn ? "Submit Ad" : "Login with Telegram"}
+                {isLoggedIn
+                  ? t("merchantPostAd.actions.submit")
+                  : t("merchantPostAd.actions.loginTelegram")}
               </Button>
             </>
           )}

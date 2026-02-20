@@ -20,15 +20,8 @@ export function readStoredStorefrontTheme(): StorefrontTheme | null {
   }
 }
 
-export function getSystemStorefrontTheme(): StorefrontTheme {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
 export function resolveStorefrontTheme(): StorefrontTheme {
-  return readStoredStorefrontTheme() ?? getSystemStorefrontTheme();
+  return readStoredStorefrontTheme() ?? "dark";
 }
 
 type ApplyStorefrontThemeOptions = {

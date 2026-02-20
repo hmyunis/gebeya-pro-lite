@@ -100,6 +100,7 @@ export function AdPreviewModal({
     ad?.description && ad.description.trim().length > 0
       ? ad.description
       : t("product.noDescription");
+  const shouldShowReviews = (ad?.status ?? "APPROVED") === "APPROVED";
   const trackPhoneInteraction = (
     clickTarget: "phone_reveal" | "phone_call",
   ) => {
@@ -196,7 +197,7 @@ export function AdPreviewModal({
                 </ScrollShadow>
                 <div className="rounded-2xl border border-default-200 p-3 text-sm">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-ink-muted">
-                    Contact
+                    {t("adPreview.contact")}
                   </p>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-ink-muted">
@@ -207,7 +208,9 @@ export function AdPreviewModal({
                             href={telHref}
                             onClick={handlePhoneClick}
                             className="font-medium text-primary hover:underline"
-                            aria-label={`Call ${formattedPhone}`}
+                            aria-label={t("adPreview.callAria", {
+                              phone: formattedPhone,
+                            })}
                           >
                             {formattedPhone}
                           </a>
@@ -216,13 +219,13 @@ export function AdPreviewModal({
                             type="button"
                             onClick={handleRevealPhoneClick}
                             className="group inline-flex items-center gap-2 rounded-md text-primary"
-                            aria-label="Reveal phone number"
+                            aria-label={t("adPreview.revealPhoneAria")}
                           >
                             <span className="font-medium blur-[3px] transition duration-150 group-hover:blur-[2px]">
                               {maskedPhone}
                             </span>
                             <span className="text-[10px] uppercase tracking-[0.14em] text-default-500">
-                              Click to reveal
+                              {t("adPreview.clickToReveal")}
                             </span>
                           </button>
                         )
@@ -238,7 +241,7 @@ export function AdPreviewModal({
                 </div>
               </div>
 
-              <AdReviewsPanel ad={ad} isOpen={isOpen} />
+              {shouldShowReviews ? <AdReviewsPanel ad={ad} isOpen={isOpen} /> : null}
             </div>
           ) : null}
         </ModalBody>

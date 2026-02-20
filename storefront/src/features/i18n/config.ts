@@ -2,7 +2,7 @@ export const SUPPORTED_LOCALES = ["en", "am"] as const;
 
 export type LocaleCode = (typeof SUPPORTED_LOCALES)[number];
 
-export const DEFAULT_LOCALE: LocaleCode = "am";
+export const DEFAULT_LOCALE: LocaleCode = "en";
 
 export const LOCALE_STORAGE_KEY = "gebeya-storefront-locale";
 export const LOCALE_CHANGED_EVENT = "gebeya:locale-changed";

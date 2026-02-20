@@ -10,10 +10,11 @@ import {
 } from 'class-validator';
 
 export class CreateAdCommentDto {
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(5)
-  rating: number;
+  rating?: number;
 
   @IsOptional()
   @IsString()
@@ -25,4 +26,9 @@ export class CreateAdCommentDto {
     return trimmed.length > 0 ? trimmed : undefined;
   })
   comment?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  parentId?: number;
 }

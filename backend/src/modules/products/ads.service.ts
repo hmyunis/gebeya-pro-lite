@@ -120,14 +120,27 @@ export class AdsService {
 
   private async notifyAdminAdSubmission(ad: Ad) {
     try {
+      const adWithContext = await this.adRepo.findOne({
+        where: { id: ad.id },
+        relations: ['category', 'merchant', 'createdBy'],
+      });
+      const sourceAd = adWithContext ?? ad;
+      const merchant = sourceAd.merchant ?? sourceAd.createdBy ?? null;
+
       await this.botService.notifyAdminAdSubmission({
-        adId: ad.id,
-        title: ad.name,
-        price: ad.price,
-        phoneNumber: ad.phoneNumber,
-        address: ad.address,
-        categoryId: ad.categoryId ?? null,
-        merchantId: ad.merchantId ?? null,
+        adId: sourceAd.id,
+        title: sourceAd.name,
+        description: sourceAd.description,
+        price: sourceAd.price,
+        phoneNumber: sourceAd.phoneNumber,
+        address: sourceAd.address,
+        categoryId: sourceAd.categoryId ?? null,
+        categoryName: sourceAd.category?.name ?? null,
+        merchantId: sourceAd.merchantId ?? null,
+        merchantName: merchant?.firstName ?? null,
+        merchantUsername: merchant?.username ?? null,
+        merchantTelegramId: merchant?.telegramId ?? null,
+        imagePaths: this.getAdImagePaths(sourceAd),
       });
     } catch {
       // Keep ad creation non-blocking if Telegram delivery fails.
@@ -363,6 +376,19 @@ export class AdsService {
       );
     }
 
+    const merchantTogglingVisibilityOnly =
+      actor.role === UserRole.MERCHANT &&
+      updateAdDto.isActive !== undefined &&
+      updateAdDto.name === undefined &&
+      updateAdDto.description === undefined &&
+      updateAdDto.price === undefined &&
+      updateAdDto.categoryId === undefined &&
+      updateAdDto.address === undefined &&
+      updateAdDto.phoneNumber === undefined &&
+      updateAdDto.itemDetails === undefined &&
+      imageBuffers.length === 0 &&
+      retainedImageUrls === undefined;
+
     let nextMerchantId = ad.merchantId;
     if (actor.role === UserRole.ADMIN && updateAdDto.merchantId !== undefined) {
       nextMerchantId = await this.resolveMerchantId(
@@ -371,8 +397,14 @@ export class AdsService {
       );
     }
 
+    const definedUpdateDto = Object.fromEntries(
+      Object.entries(updateAdDto as Record<string, unknown>).filter(
+        ([, value]) => value !== undefined,
+      ),
+    ) as Partial<UpdateAdDto>;
+
     Object.assign(ad, {
-      ...updateAdDto,
+      ...definedUpdateDto,
       merchantId: nextMerchantId,
       address:
         updateAdDto.address !== undefined
@@ -385,11 +417,19 @@ export class AdsService {
     });
 
     if (actor.role === UserRole.MERCHANT) {
-      ad.status = AdStatus.PENDING;
-      ad.moderationNote = null;
-      ad.approvedAt = null;
-      ad.approvedById = null;
-      await this.notifyAdminAdSubmission(ad);
+      if (merchantTogglingVisibilityOnly) {
+        if (ad.status !== AdStatus.APPROVED) {
+          throw new BadRequestException(
+            'Only approved ads can be toggled between published and draft',
+          );
+        }
+      } else {
+        ad.status = AdStatus.PENDING;
+        ad.moderationNote = null;
+        ad.approvedAt = null;
+        ad.approvedById = null;
+        await this.notifyAdminAdSubmission(ad);
+      }
     } else if (actor.role === UserRole.ADMIN && updateAdDto.status) {
       if (updateAdDto.status === AdStatus.APPROVED) {
         ad.approvedAt = new Date();
@@ -439,6 +479,7 @@ export class AdsService {
       adName: saved.name,
       actorUserId: adminUserId,
     });
+    await this.notifyMerchantAdModeration(saved, AdStatus.APPROVED);
     return saved;
   }
 
@@ -459,7 +500,53 @@ export class AdsService {
       actorUserId: adminUserId,
       note: saved.moderationNote,
     });
+    await this.notifyMerchantAdModeration(saved, AdStatus.REJECTED);
     return saved;
+  }
+
+  async moderateFromTelegramAction(input: {
+    adId: number;
+    action: 'approve' | 'reject';
+    adminTelegramId: string;
+  }) {
+    const adminTelegramId = String(input.adminTelegramId ?? '').trim();
+    if (!adminTelegramId) {
+      throw new BadRequestException('Missing Telegram admin identity');
+    }
+
+    const adminUser = await this.userRepo.findOne({
+      where: {
+        telegramId: adminTelegramId,
+        role: UserRole.ADMIN,
+      },
+      select: { id: true },
+    });
+
+    if (!adminUser) {
+      throw new BadRequestException(
+        'Admin Telegram account is not linked to an admin profile',
+      );
+    }
+
+    const existingAd = await this.adRepo.findOne({
+      where: { id: input.adId },
+      select: { id: true, status: true },
+    });
+
+    if (!existingAd) {
+      throw new NotFoundException('Ad not found');
+    }
+
+    if (existingAd.status !== AdStatus.PENDING) {
+      throw new BadRequestException(
+        `Ad #${input.adId} is already ${existingAd.status}`,
+      );
+    }
+
+    if (input.action === 'approve') {
+      return this.approve(input.adId, adminUser.id);
+    }
+    return this.reject(input.adId, adminUser.id);
   }
 
   async getDashboardStats(userId: number, role: UserRole) {
@@ -542,6 +629,36 @@ export class AdsService {
     }
 
     return unique;
+  }
+
+  private async notifyMerchantAdModeration(ad: Ad, status: AdStatus) {
+    if (!ad.merchantId) {
+      return;
+    }
+
+    try {
+      const merchant = await this.userRepo.findOne({
+        where: { id: ad.merchantId },
+        select: {
+          id: true,
+          telegramId: true,
+        },
+      });
+
+      if (!merchant?.telegramId) {
+        return;
+      }
+
+      await this.botService.notifyMerchantAdModeration({
+        telegramId: merchant.telegramId,
+        adId: ad.id,
+        adTitle: ad.name,
+        status: status === AdStatus.APPROVED ? 'APPROVED' : 'REJECTED',
+        note: ad.moderationNote,
+      });
+    } catch {
+      // Keep moderation non-blocking if Telegram delivery fails.
+    }
   }
 
   private async resolveMerchantId(

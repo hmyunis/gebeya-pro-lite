@@ -72,6 +72,7 @@ const statusColorMap: Record<AdStatus, "warning" | "success" | "danger"> = {
   REJECTED: "danger",
 };
 const MAX_REVIEW_STARS = 5;
+const MAX_REVIEW_NESTING_DEPTH = 4;
 
 type DynamicFieldType = CategoryDynamicField["type"];
 
@@ -252,6 +253,22 @@ function dynamicFieldsToDrafts(
   }));
 }
 
+function flattenAdReviews(reviews: AdReview[]): AdReview[] {
+  const flattened: AdReview[] = [];
+
+  const walk = (items: AdReview[]) => {
+    for (const item of items) {
+      flattened.push(item);
+      if (Array.isArray(item.replies) && item.replies.length > 0) {
+        walk(item.replies);
+      }
+    }
+  };
+
+  walk(reviews);
+  return flattened;
+}
+
 function humanizeItemDetailKey(key: string): string {
   const withSpaces = key
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -386,6 +403,14 @@ export default function AdsPage() {
     ((categoriesMeta?.page ?? 1) - 1) * (categoriesMeta?.limit ?? categories.length);
   const adReviews = reviewsResponse?.data ?? [];
   const adReviewsMeta = reviewsResponse?.meta;
+  const flattenedAdReviews = useMemo(() => flattenAdReviews(adReviews), [adReviews]);
+  const totalReviewComments = useMemo(
+    () =>
+      flattenedAdReviews.reduce((total, review) => {
+        return total + ((review.comment?.trim() ?? "").length > 0 ? 1 : 0);
+      }, 0),
+    [flattenedAdReviews],
+  );
   const detailEntries = useMemo(() => {
     const rawDetails = detailsTarget?.itemDetails;
     if (!rawDetails || typeof rawDetails !== "object" || Array.isArray(rawDetails)) {
@@ -1485,14 +1510,14 @@ export default function AdsPage() {
                 </div>
 
                 <div className="rounded-lg border border-default-200 p-3">
-                  <p className="mb-2 text-xs text-default-500">Reviews</p>
+                  <p className="mb-2 text-xs text-default-500">Reviews & Comments</p>
                   {isLoadingReviews ? (
-                    <p className="text-sm text-default-500">Loading reviews...</p>
+                    <p className="text-sm text-default-500">Loading feedback...</p>
                   ) : reviewsError ? (
                     <div className="space-y-2">
                       <p className="text-sm text-danger">
                         {(reviewsError as any)?.response?.data?.message ||
-                          "Failed to load reviews"}
+                          "Failed to load feedback"}
                       </p>
                       <Button
                         size="sm"
@@ -1506,14 +1531,18 @@ export default function AdsPage() {
                   ) : (
                     <div className="space-y-3">
                       <p className="text-sm text-default-500">
-                        {adReviewsMeta?.totalReviews ?? 0} review
-                        {(adReviewsMeta?.totalReviews ?? 0) === 1 ? "" : "s"} | Average:{" "}
+                        {adReviewsMeta?.totalReviews ?? 0} rating
+                        {(adReviewsMeta?.totalReviews ?? 0) === 1 ? "" : "s"} |{" "}
+                        {totalReviewComments} comment
+                        {totalReviewComments === 1 ? "" : "s"} | Average:{" "}
                         {(adReviewsMeta?.averageRating ?? 0).toFixed(1)} / 5
                       </p>
-                      {adReviews.length === 0 ? (
-                        <p className="text-sm text-default-500">No reviews yet for this ad.</p>
+                      {flattenedAdReviews.length === 0 ? (
+                        <p className="text-sm text-default-500">
+                          No ratings or comments yet for this ad.
+                        </p>
                       ) : (
-                        adReviews.map((review) => {
+                        flattenedAdReviews.map((review) => {
                           const createdAt = new Date(review.createdAt);
                           const createdAtLabel = Number.isNaN(createdAt.getTime())
                             ? review.createdAt
@@ -1524,16 +1553,35 @@ export default function AdsPage() {
                               ? reviewerUsername
                               : `@${reviewerUsername}`
                             : null;
-                          const safeRating = Math.max(
-                            0,
-                            Math.min(MAX_REVIEW_STARS, review.rating),
-                          );
+                          const ratingValue =
+                            typeof review.rating === "number" && Number.isFinite(review.rating)
+                              ? review.rating
+                              : null;
+                          const safeRating =
+                            ratingValue === null
+                              ? 0
+                              : Math.max(
+                                  1,
+                                  Math.min(MAX_REVIEW_STARS, Math.round(ratingValue)),
+                                );
                           const stars =
-                            "★".repeat(safeRating) +
-                            "☆".repeat(MAX_REVIEW_STARS - safeRating);
+                            ratingValue === null
+                              ? null
+                              : "★".repeat(safeRating) +
+                                "☆".repeat(MAX_REVIEW_STARS - safeRating);
+                          const commentText = review.comment?.trim() ?? "";
+                          const safeDepth = Math.max(
+                            0,
+                            Math.min(MAX_REVIEW_NESTING_DEPTH, review.depth ?? 0),
+                          );
+                          const leftIndent = safeDepth * 14;
 
                           return (
-                            <Card key={review.id} className="border border-default-200 shadow-none">
+                            <Card
+                              key={review.id}
+                              className="border border-default-200 shadow-none"
+                              style={{ marginLeft: `${leftIndent}px` }}
+                            >
                               <CardBody className="space-y-1">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                   <div className="flex min-w-0 items-start gap-3">
@@ -1568,6 +1616,11 @@ export default function AdsPage() {
                                             ? "Review access blocked"
                                             : "Review access active"}
                                         </Chip>
+                                        {safeDepth > 0 ? (
+                                          <Chip size="sm" variant="flat" color="secondary">
+                                            Reply
+                                          </Chip>
+                                        ) : null}
                                       </div>
                                     </div>
                                   </div>
@@ -1608,9 +1661,9 @@ export default function AdsPage() {
                                     </Button>
                                   </div>
                                 </div>
-                                <p className="text-sm text-warning">{stars}</p>
+                                {stars ? <p className="text-sm text-warning">{stars}</p> : null}
                                 <p className="text-sm text-default-700">
-                                  {review.comment?.trim() || "Rating only"}
+                                  {commentText || (stars ? "Rating only" : "No text provided")}
                                 </p>
                               </CardBody>
                             </Card>
