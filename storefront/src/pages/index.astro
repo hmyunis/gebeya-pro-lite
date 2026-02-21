@@ -7,12 +7,11 @@ import { API_BASE } from "@/config/env";
 <Layout title="Home">
   <style is:global>
     html[data-home-ready="true"] #home-placeholder {
-      opacity: 0 !important;
-      visibility: hidden !important;
+      display: none !important;
     }
   </style>
 
-  <section class="relative min-h-190">
+  <section class="relative min-h-[640px]">
     <div
       id="home-placeholder"
       aria-hidden="true"
@@ -77,4 +76,3 @@ import { API_BASE } from "@/config/env";
     </div>
   </section>
 </Layout>
-

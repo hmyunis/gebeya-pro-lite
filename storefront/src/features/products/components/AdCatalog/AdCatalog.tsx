@@ -303,21 +303,21 @@ function AdCatalogContent({
         </div>
       </div>
 
-      {isCompactFiltersViewport ? (
+      {isCompactFiltersViewport && isFilterDrawerOpen ? (
         <div
-          className={`fixed inset-0 z-50 ${isFilterDrawerOpen ? "pointer-events-auto" : "pointer-events-none"}`}
-          aria-hidden={!isFilterDrawerOpen}
+          className="fixed inset-0 z-50 pointer-events-auto"
+          aria-hidden="false"
         >
           <div
-            className={`theme-overlay absolute inset-0 transition-opacity ${isFilterDrawerOpen ? "opacity-100" : "opacity-0"}`}
+            className="theme-overlay absolute inset-0 transition-opacity opacity-100"
             onClick={() => setIsFilterDrawerOpen(false)}
           ></div>
 
           <div
-            className={`theme-drawer absolute left-0 top-0 h-full w-[80%] max-w-105 transform overflow-hidden shadow-2xl backdrop-blur-xl transition-transform sm:w-[40%] ${isFilterDrawerOpen ? "translate-x-0" : "-translate-x-full"}`}
-            role={isFilterDrawerOpen ? "dialog" : undefined}
-            aria-modal={isFilterDrawerOpen ? "true" : undefined}
-            aria-hidden={!isFilterDrawerOpen}
+            className="theme-drawer absolute left-0 top-0 h-full w-[80%] max-w-105 transform overflow-hidden shadow-2xl backdrop-blur-xl transition-transform sm:w-[40%] translate-x-0"
+            role="dialog"
+            aria-modal="true"
+            aria-hidden="false"
           >
             <div className="theme-divider flex items-center justify-between border-b px-5 py-4">
               <div>
@@ -356,20 +356,24 @@ function AdCatalogContent({
         </div>
       ) : null}
 
-      <AdPreviewModal
-        isOpen={Boolean(previewAd)}
-        onClose={() => setPreviewAd(null)}
-        ad={previewAd}
-        imageBase={imageBase}
-      />
+      {previewAd ? (
+        <AdPreviewModal
+          isOpen
+          onClose={() => setPreviewAd(null)}
+          ad={previewAd}
+          imageBase={imageBase}
+        />
+      ) : null}
 
-      <PostAdModal
-        isOpen={isPostModalOpen}
-        onClose={() => setIsPostModalOpen(false)}
-        categories={categories}
-        isLoggedIn={Boolean(user)}
-        onPosted={() => reload()}
-      />
+      {isPostModalOpen ? (
+        <PostAdModal
+          isOpen
+          onClose={() => setIsPostModalOpen(false)}
+          categories={categories}
+          isLoggedIn={Boolean(user)}
+          onPosted={() => reload()}
+        />
+      ) : null}
     </section>
   );
 }

@@ -89,6 +89,8 @@ body {
     radial-gradient(720px 520px at 40% 100%, var(--bg-glow-3) 0%, transparent 62%),
     var(--bg-base);
   min-height: 100vh;
+  min-height: 100svh;
+  overflow-x: hidden;
   transition: background 220ms ease, color 220ms ease;
 }
 
